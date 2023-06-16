@@ -1,0 +1,76 @@
+service: sample
+
+plugins:
+  - serverless-domain-manager
+  - serverless-go-plugin
+  - serverless-prune-plugin
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  patterns:
+    - "!node_modules/**"
+
+custom:
+  # system
+  cors: ${file(slsconfig/cors.yml)}
+  # customer variables
+  authorizers: ${file(slsconfig/authorizers.yml)}
+  # plugins
+  customDomain:
+    domainName: ${env:API_DOMAIN}
+    certificateName: ${env:API_CERTIFICATE_NAME}
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    endpointType: "regional"
+    basePath: ${self:service}
+  prune:
+    automatic: true
+    number: 3
+  resourcePrefix: ${self:service}-${self:provider.stage}
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'review'}
+  runtime: go1.x
+  region: ${opt:region, 'ap-southeast-1'}
+  logRetentionInDays: 7
+  tracing:
+    apiGateway: false
+    lambda: false
+  environment:
+    # System
+    STAGE: ${env:STAGE}
+    AWS_REGION: ${env:AWS_REGION}
+    AWS_ACCOUNT_ID: ${env:AWS_ACCOUNT_ID}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Resource: "*"
+          Action:
+            - "lambda:InvokeFunction"
+            - "lambda:InvokeAsync"
+            - "apigateway:*"
+            - "execute-api:*"
+            - "dynamodb:*"
+            - "sqs:*"
+            - "sns:*"
+  apiGateway:
+    minimumCompressionSize: 2000
+functions:
+  firstSample:
+    handler: .
+    timeout: 29
+    memorySize: 128
+    events:
+      - http:
+          path: get-insight
+          method: get
+      - sqs:
+          arn: arn:aws:sqs:${env:AWS_REGION}:${env:AWS_ACCOUNT_ID}:insight-async-job-${self:provider.stage}
+          batchSize: 1
+    environment:
+      DB_NAME: ${env:MONGO_DB_NAME}
+      DB_URI: ${env:MONGO_DB_URL}
+      WEBSOCKET_NOTIFICATION_QUEUE_URL: ${env:WEBSOCKET_NOTIFICATION_QUEUE_URL}

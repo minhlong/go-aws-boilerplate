@@ -1,0 +1,6 @@
+userAuthorizer:
+  name: authorizer
+  arn: ${env:USER_AUTHORIZER_FUNCTION_ARN}
+  type: request
+  identitySource: method.request.header.Authorization
+  resultTtlInSeconds: 300

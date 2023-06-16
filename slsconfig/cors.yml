@@ -1,0 +1,11 @@
+origin: '*'
+headers:
+  - Content-Type
+  - Authorization
+  - X-Amz-Date
+  - X-Api-Key
+  - X-Amz-Security-Token
+  - X-Amz-User-Agent
+  - X-App-ID
+  - X-App-Version
+  - X-App-Build-Number
